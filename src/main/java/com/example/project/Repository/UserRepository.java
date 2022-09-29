@@ -25,6 +25,9 @@ public interface UserRepository extends JpaRepository<User,Integer> {
 		@Query("SELECT u FROM User u WHERE u.userName=?1")
 		Optional<User> findUserByUsername(String username);
 		
+		@Query("SELECT u FROM User u WHERE u.userName=?1")
+		User findByusername(String username);
+		
 		//null aairacha
 		@Query(value = "SELECT p.password FROM Users u JOIN Password_history p on p.user_id = u.user_id WHERE u.user_name=?1 order by p.date desc", nativeQuery=true)
 		Optional<User> findLastPasswords(String username);

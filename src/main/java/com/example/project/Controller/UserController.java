@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.project.Model.User;
 import com.example.project.Service.UserService;
 
+import net.minidev.json.JSONObject;
+
 @RestController
 @RequestMapping(path = "api/user")
 public class UserController {
@@ -40,7 +42,7 @@ public class UserController {
 	}
 	
 	@PostMapping(path= "/loginUser")
-	public String loginUser(@RequestBody Map<String, Object> body) {
+	public JSONObject loginUser(@RequestBody Map<String, Object> body) {
 		return userService.Login(body.get("user_name").toString(),body.get("password").toString());
 	}
 	

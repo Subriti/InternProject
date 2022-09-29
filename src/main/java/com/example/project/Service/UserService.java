@@ -2,14 +2,24 @@ package com.example.project.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,9 +30,12 @@ import com.example.project.Model.Type;
 import com.example.project.Model.User;
 import com.example.project.Repository.PasswordHistoryRepository;
 import com.example.project.Repository.UserRepository;
+import com.example.project.utilities.JWTUtility;
+
+import net.minidev.json.JSONObject;
 
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
 	private final UserRepository userRepository;
 
@@ -33,6 +46,12 @@ public class UserService {
 		this.userRepository = userRepository;
 		this.passwordHistoryRepository = passwordHistoryRepository;
 	}
+
+	@Autowired
+	private JWTUtility jwtUtility;
+
+	@Autowired
+	private AuthenticationManager authenticationManager;
 
 	public List<User> getUsers() {
 		return userRepository.findAll();
@@ -51,7 +70,7 @@ public class UserService {
 			// throw new IllegalStateException("Username is already taken");
 		}
 
-		String hashedPassword="";
+		String hashedPassword = "";
 		String password = user.getPassword();
 		if (PasswordValidator.isValid(password)) {
 
@@ -79,7 +98,7 @@ public class UserService {
 			passwordHistory.setReasonType(type);
 			passwordHistory.setPassword(hashedPassword);
 			passwordHistoryRepository.save(passwordHistory);
-			return "User Successfully Registered. \nYour hashed password is "+hashedPassword;
+			return "User Successfully Registered. \nYour hashed password is " + hashedPassword;
 		}
 		return "New password doesn't meet required complexity definitions. \nRequired: minimum of 8characters, 1 numerical, 1 special character, 1capital letter and 1small letter";
 	}
@@ -259,8 +278,15 @@ public class UserService {
 		return "Successful !! Your new password is " + newPassword;
 	}
 
+	@Bean
+	public static PasswordEncoder passwordEncoder() {
+		return NoOpPasswordEncoder.getInstance();
+	}
+	
 	@Transactional
-	public String Login(String userName, String password) {
+	public JSONObject Login(String userName, String password) {
+		JSONObject jsonObject = new JSONObject();
+
 		ZoneId defaultZoneId = ZoneId.systemDefault();
 		LocalDate currentDate = LocalDate.now();
 		Date endDate = Date.from(currentDate.atStartOfDay(defaultZoneId).toInstant());
@@ -271,26 +297,77 @@ public class UserService {
 			String passwordString = userRepository.findPassword(userName);
 			System.out.println(passwordString);
 
+			int userId;
+			int PasswordExpiry;
+			Date expiryDate;
+
 			if (BCrypt.checkpw(password, passwordString)) {
 
-				int userId = userRepository.findUserId(userName);
+				userId = userRepository.findUserId(userName);
 				System.out.println(userId);
-				int PasswordExpiry = userRepository.findPasswordExpiry(userName);
+				PasswordExpiry = userRepository.findPasswordExpiry(userName);
 				System.out.println(PasswordExpiry);
 
+				try {
+					authenticationManager
+							.authenticate(new UsernamePasswordAuthenticationToken(userName, passwordString));
+				} catch (BadCredentialsException e) {
+					jsonObject.put("error", "INVALID CREDENTIALS " + e);
+					return jsonObject;
+				}
+
 				if (PasswordExpiry == 0) {
-					return "Successful Login !! You chose not to expire your password";
+					UserDetails userDetails = loadUserByUsername(userName);
+					final String token = jwtUtility.generateToken(userDetails);
+
+					jsonObject.put("message", "Successful Login !! You chose not to expire your password ");
+
+					jsonObject.put("id", userId);
+					jsonObject.put("user", userName);
+					jsonObject.put("token", token);
+
+					return jsonObject;
+
 				} else {
-					Date expiryDate = userRepository.findExpiryDate(PasswordExpiry, userId);
+					expiryDate = userRepository.findExpiryDate(PasswordExpiry, userId);
 					System.out.println(expiryDate);
 					if (expiryDate.compareTo(endDate) <= 0) {
-						return "Your password has expired on " + expiryDate + ". \nPlease update it and login again";
+						jsonObject.put("message",
+								"Your password has expired on " + expiryDate + ". Please update it and login again");
+
+						return jsonObject;
 					}
-					return "Successful Login !! \nYour password will expire on " + expiryDate;
+
+					UserDetails userDetails = loadUserByUsername(userName);
+					final String token = jwtUtility.generateToken(userDetails);
+
+					jsonObject.put("message", "Successful Login !! Your password will expire on " + expiryDate);
+
+					jsonObject.put("id", userId);
+					jsonObject.put("user", userName);
+					jsonObject.put("token", token);
+
+					return jsonObject;
 				}
 			}
 		}
-		return "UserName or Password is invalid";
+		jsonObject.put("error", "UserName or Password is invalid");
+
+		return jsonObject;
+
 	}
 
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
+		User user = userRepository.findByusername(username);
+
+		if (user == null) {
+			throw new UsernameNotFoundException("User not found with username: " + username);
+		}
+
+		String name = user.getUserName();
+		String password = user.getPassword();
+		return new org.springframework.security.core.userdetails.User(name, password, new ArrayList<>());
+	}
 }

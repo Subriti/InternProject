@@ -21,22 +21,12 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 @Table(name = "users")
 public class User implements Serializable {
 
-	/**
-	 *
-	 */
 	private static final long serialVersionUID = 8139372911386924019L;
 
 	@Id
-	 @SequenceGenerator(
-	            name = "user_sequence",
-	            sequenceName = "user_sequence",
-	            allocationSize = 1
-	    )
-	    @GeneratedValue(
-	            strategy = GenerationType.SEQUENCE,
-	            generator = "user_sequence"
-	    )
-	//@GeneratedValue(strategy = GenerationType.AUTO)
+	@SequenceGenerator(name = "user_sequence", sequenceName = "user_sequence", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_sequence")
+	// @GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "user_id")
 	private int userId;
 
@@ -45,7 +35,7 @@ public class User implements Serializable {
 
 	@Column(name = "password")
 	private String password;
-	
+
 	@Column(name = "password_expiry_months")
 	private String passwordExpiryMonths;
 
@@ -69,15 +59,13 @@ public class User implements Serializable {
 	 *
 	 * Deserialization (don't know if it works)
 	 *
-	 * try {
-	 * String json = "{ \"color\" : \"Black\", \"type\" : \"BMW\" }";
-	 * 		ObjectMapper objectMapper = new ObjectMapper();
-	 * 		userDetails = objectMapper. readValue(json, Student.class);
+	 * try { String json = "{ \"color\" : \"Black\", \"type\" : \"BMW\" }";
+	 * ObjectMapper objectMapper = new ObjectMapper(); userDetails = objectMapper.
+	 * readValue(json, Student.class);
 	 *
-	 * Car car =
-  objectMapper.readValue(new URL("file:src/test/resources/json_car.json"), Car.class);
-	 *  }
-	 * catch (JsonProcessingException e) { return null; }
+	 * Car car = objectMapper.readValue(new
+	 * URL("file:src/test/resources/json_car.json"), Car.class); } catch
+	 * (JsonProcessingException e) { return null; }
 	 */
 
 	public User() {
@@ -102,7 +90,6 @@ public class User implements Serializable {
 		this.passwordExpiryMonths = passwordExpiryMonths;
 		this.userStatus = userStatus;
 	}
-
 
 	public User(String userName, String password, String passwordExpiryMonths, Status userStatus) {
 		super();
