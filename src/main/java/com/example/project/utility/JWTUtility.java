@@ -1,4 +1,4 @@
-package com.example.project.utilities;
+package com.example.project.utility;
 
 import java.io.Serializable;
 import java.util.Date;

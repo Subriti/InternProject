@@ -30,7 +30,7 @@ import com.example.project.Model.Type;
 import com.example.project.Model.User;
 import com.example.project.Repository.PasswordHistoryRepository;
 import com.example.project.Repository.UserRepository;
-import com.example.project.utilities.JWTUtility;
+import com.example.project.utility.JWTUtility;
 
 import net.minidev.json.JSONObject;
 
