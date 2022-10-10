@@ -1,6 +1,7 @@
 package com.example.project.Repository;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,6 +32,11 @@ public interface UserRepository extends JpaRepository<User,Integer> {
 		//null aairacha
 		@Query(value = "SELECT p.password FROM Users u JOIN Password_history p on p.user_id = u.user_id WHERE u.user_name=?1 order by p.date desc", nativeQuery=true)
 		Optional<User> findLastPasswords(String username);
+		
+		//select PASSWORD, date from password_history where user_id=7 order by date desc limit 3
+
+		@Query(value = "SELECT p.password FROM Users u JOIN Password_history p on p.user_id = u.user_id WHERE u.user_name=?1 order by p.date desc limit 3", nativeQuery=true)
+		List<String> findLastPassword(String username);
 		
 		@Query("SELECT u.password FROM User u WHERE u.userName=?1")
 		String findPassword(String username);

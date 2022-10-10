@@ -130,36 +130,47 @@ public class UserService implements UserDetailsService {
 		}
 
 		String hashedPassword = "";
+
+		List<String> list = userRepository.findLastPassword(Newuser.getUserName());
+		int length = list.size();
+		int i = 0;
+
 		if (Newuser.getPassword() != null && Newuser.getPassword().length() > 0) {
 			if (PasswordValidator.isValid(Newuser.getPassword())) {
 
 				// updated password cannot be old password
 				if (!BCrypt.checkpw(Newuser.getPassword(), user.getPassword())) {
 
-					String password = Newuser.getPassword();
-					BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-					hashedPassword = passwordEncoder.encode(password);
+					while (i < length) {
+						if (!BCrypt.checkpw(Newuser.getPassword(), list.get(i))) {
 
-					user.setPassword(hashedPassword);
+							String password = Newuser.getPassword();
+							BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+							hashedPassword = passwordEncoder.encode(password);
 
-					ZoneId defaultZoneId = ZoneId.systemDefault();
-					LocalDate currentDate = LocalDate.now();
-					Date endDate = Date.from(currentDate.atStartOfDay(defaultZoneId).toInstant());
+							user.setPassword(hashedPassword);
 
-					PasswordHistory passwordHistory = new PasswordHistory();
+							ZoneId defaultZoneId = ZoneId.systemDefault();
+							LocalDate currentDate = LocalDate.now();
+							Date endDate = Date.from(currentDate.atStartOfDay(defaultZoneId).toInstant());
 
-					Type type = new Type();
-					type.setTypeId(6);
+							PasswordHistory passwordHistory = new PasswordHistory();
 
-					User userIdUser = new User();
-					userIdUser.setUserId(userId);
+							Type type = new Type();
+							type.setTypeId(6);
 
-					passwordHistory.setUserId(userIdUser);
-					passwordHistory.setDate(endDate);
-					passwordHistory.setReasonType(type);
-					passwordHistory.setPassword(hashedPassword);
-					passwordHistoryRepository.save(passwordHistory);
-					// return "Successfully Updated the password record";
+							User userIdUser = new User();
+							userIdUser.setUserId(userId);
+
+							passwordHistory.setUserId(userIdUser);
+							passwordHistory.setDate(endDate);
+							passwordHistory.setReasonType(type);
+							passwordHistory.setPassword(hashedPassword);
+							passwordHistoryRepository.save(passwordHistory);
+							// return "Successfully Updated the password record";
+						}
+						i++;
+					}
 				} else {
 					return "New password cannot be same as old password";
 				}
@@ -186,21 +197,16 @@ public class UserService implements UserDetailsService {
 		ZoneId defaultZoneId = ZoneId.systemDefault();
 		LocalDate currentDate = LocalDate.now();
 		Date endDate = Date.from(currentDate.atStartOfDay(defaultZoneId).toInstant());
-		System.out.println("Login");
+
 		Optional<User> userOptional = userRepository.findUserByUsername(userName);
-		System.out.println(userOptional);
+
 		if (userOptional.isPresent()) {
 			// username valid cha vane login garna dine
 			String passwordString = userRepository.findPassword(userName);
-			System.out.println(passwordString);
-			System.out.println(password);
-			System.out.println(password.equals(passwordString));
+
 			if (password.equals(passwordString)) {
-				System.out.println("Equal");
 				int userId = userRepository.findUserId(userName);
-				System.out.println(userId);
 				int PasswordExpiry = userRepository.findPasswordExpiry(userName);
-				System.out.println(PasswordExpiry);
 
 				if (PasswordExpiry == 0) {
 					return "Successful Login !! You chose not to expire your password";
@@ -282,7 +288,7 @@ public class UserService implements UserDetailsService {
 	public static PasswordEncoder passwordEncoder() {
 		return NoOpPasswordEncoder.getInstance();
 	}
-	
+
 	@Transactional
 	public JSONObject Login(String userName, String password) {
 		JSONObject jsonObject = new JSONObject();
