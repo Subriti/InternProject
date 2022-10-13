@@ -281,7 +281,7 @@ public class UserService implements UserDetailsService {
 
 		user.setPassword(hashedPassword);
 
-		return "Successful !! Your new password is " + newPassword;
+		return "Successful !! Your new password is " + hashedPassword;
 	}
 
 	@Bean

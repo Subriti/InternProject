@@ -35,7 +35,10 @@ public class SfaclStaffService {
 
 
     public List<SfaclStaff> findSfaclStaff(Sfacl corpId, Designation designationId) {
-		return corpStaffRepository.findSfaclStaff(corpId, designationId);
+    	if (designationId!=null) {
+    		return corpStaffRepository.findSfaclStaff(corpId, designationId);
+		}
+		return corpStaffRepository.findStaffByCorp(corpId);
 	}
 
 	public void addNewSfaclStaff(SfaclStaff corpStaff) {
